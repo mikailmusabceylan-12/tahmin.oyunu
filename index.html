@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Anlat Bakalım Yarışması</title>
+<title>Anlat Bakalım</title>
 <style>
 *{box-sizing:border-box}
 body{
@@ -44,7 +44,6 @@ button{
 .correct{background:#20b96b;color:white}
 .pass{background:#e49a32;color:white}
 .next{background:#2999ed;color:white}
-.danger{background:#d94c4c;color:white}
 li{
  list-style:none;background:#111a30;
  padding:13px;margin:8px;border-radius:10px;
@@ -58,22 +57,21 @@ li{
 
 <div id="start">
 <h2 id="startTitle">1. TUR - 1. GRUP</h2>
-<p id="startDescription">Grup adını gir:</p>
+<p>Grup adını gir:</p>
 <input id="groupName" placeholder="Grup adı">
 <br>
-<button onclick="startGroup()">Yarışmaya Başla</button>
+<button onclick="startGroup()">Başla</button>
 </div>
 
 <div id="game" class="hidden">
 <h2 id="groupTitle"></h2>
 <div class="info">
- <h3 id="roundTitle"></h3>
- Kelime başına: <b id="pointValue"></b> puan
- <div id="timer">60</div>
- Kelime: <b id="wordCount">1</b> / 3
- <br>Bu grubun toplam puanı: <b id="score">0</b>
+<h3 id="roundTitle"></h3>
+Kelime başına: <b id="pointValue"></b> puan
+<div id="timer">60</div>
+Kelime: <b id="wordCount">1</b> / 3
+<br>Toplam puan: <b id="score">0</b>
 </div>
-
 <div class="word" id="word"></div>
 <button class="correct" onclick="correct()">✅ BİLDİ</button>
 <button class="pass" onclick="skip()">⏭ PAS</button>
@@ -83,23 +81,15 @@ li{
 <h2>🎉 GRUP TURU TAMAMLADI!</h2>
 <h2 id="resultName"></h2>
 <h1 id="resultScore"></h1>
-<p id="resultMessage"></p>
 <button class="next" onclick="nextGroup()">Sonraki Gruba Geç</button>
 </div>
 
 <div id="roundResult" class="hidden">
-<h2>🏆 TURDAKİ BÜTÜN GRUPLAR TAMAMLANDI!</h2>
+<h2>🏆 BÜTÜN GRUPLAR TAMAMLADI!</h2>
 <h3 id="roundFinished"></h3>
 <ol id="roundList"></ol>
-
-<button onclick="addGroup()" class="correct">
-➕ YENİ GRUP OLUŞTUR
-</button>
-
-<button onclick="nextRound()" class="next" id="nextRoundButton">
-2. TURA GEÇ
-</button>
-
+<button class="correct" onclick="addGroup()">➕ YENİ GRUP OLUŞTUR</button>
+<button class="next" onclick="nextRound()" id="nextRoundButton">2. TURA GEÇ</button>
 <br>
 <button onclick="showRanking()">Puan Tablosu</button>
 </div>
@@ -119,18 +109,49 @@ li{
 </div>
 
 <script>
-const words=[
-"DOLAP","PİRAMİT","BİSİKLET","TELEFON",
-"UÇAK","DOKTOR","FUTBOL","BİLGİSAYAR",
-"OKUL","DENİZ","KAMERA","ROBOT",
-"ASLAN","KÖPEK","GÜNEŞ","AY",
-"TELEVİZYON","KALEM","KÜTÜPHANE",
-"YILDIZ","HELİKOPTER","ÇİKOLATA",
-"ŞEMSİYE","BUZDOLABI","ÖĞRETMEN",
-"ASTRONOT","TREN","GEMİ","KÖPRÜ",
-"FIRIN","SAAT","GÖKKUŞAĞI","AYNA",
-"ŞAPKA","PİYANO","KARPUZ","UÇURTMA",
-"ÇANTA","BULUT","ASANSÖR"
+
+// GENİŞ KELİME HAVUZU
+const words = [
+"AKVARYUM","ASANSÖR","ASTRONOT","AYNA","BALON",
+"BAVUL","BAYKUŞ","BİSİKLET","BİLGİSAYAR","BULUT",
+"BUZDOLABI","CAMBAZ","CÜZDAN","ÇADIR","ÇAPA",
+"ÇİÇEK","ÇİKOLATA","ÇİZGİ FİLM","ÇORAP","DANS",
+"DAVUL","DENİZALTI","DİŞ FIRÇASI","DOLAP","DONDURMA",
+"DÜRÜBÜN","EJDERHA","ELDİVEN","ELEKTRİK","FENER",
+"FIRÇA","FUTBOL","GEMİ","GÖKKUŞAĞI","GÖZLÜK",
+"GÜNEŞ","HALI","HAMAK","HARİTA","HEYKEL",
+"HELİKOPTER","HİNDİSTAN CEVİZİ","İNCİR","İSKAMBİL",
+"JANDARMA","JETON","KAMERA","KANGURU","KARPUZ",
+"KARTAL","KASK","KAYAK","KEMAN","KİLİT",
+"KİTAPLIK","KOVBOY","KÖPRÜ","KÖSTEBEK","KÜTÜPHANE",
+"LAMBA","LUNAPARK","MAKAS","MARANGOZ","MAYMUN",
+"MERDİVEN","MİKROFON","MİKROSKOP","MUM","MÜZİK",
+"NALBUR","NAR","NEŞTER","OKYANUS","ORKİDE",
+"OYUNCAK","ÖRÜMCEK","PALYAÇO","PANDA","PAPATYA",
+"PARAŞÜT","PATEN","PENGUEN","PİRAMİT","PİYANO",
+"POSTACI","RADYO","ROBOT","ROKET","SALINCAK",
+"SANDALYE","SATRANÇ","SİNCAP","SİRK","SÜPÜRGE",
+"ŞEMSİYE","ŞELALE","TABLO","TAHTA","TAKSİ",
+"TAMBUR","TARAK","TELESKOP","TELEVİZYON","TERMOS",
+"TIRTIL","TİMSAH","TREN","TRAKTÖR","TULUM",
+"UÇAK","UÇURTMA","UZAY","ÜTÜ","VETERİNER",
+"VİNÇ","VİYOLONSEL","VOLKAN","YAKIT","YAPBOZ",
+"YEL DEĞİRMENİ","YELKENLİ","YILDIZ","YUNUS",
+"ZAMBAK","ZEBRA","ZİL","ZÜRAFA",
+"ANAHTAR","ARMUT","AYAKKABI","BADEMCİK","BARDAK",
+"BEŞİK","BİLEZİK","BOYUNBAĞI","ÇEKMECE","ÇEKİÇ",
+"ÇAMAŞIR MAKİNESİ","ÇEKİRDEK","ÇINGIRAK","ÇİFTLİK",
+"DÜRÜM","EKMEK","FİL","FİNCAN","FOK BALIGI",
+"GALOŞ","GİTAR","GÜVERCİN","HAMSİ","KAHVE",
+"KALORİFER","KARAVAN","KASAP","KAZAK","KEDİ",
+"KUM SAATİ","KUMBARA","KURBAĞA","KÜREK","LİMON",
+"MANDAL","MANGAL","MASKE","MATKAP","MAYO",
+"MİNDER","MONT","MOTOR","MÜHENDİS","NAL",
+"ODUN","PASTA","PİL","PİPET","PUSULA",
+"RÖNTGEN","SABUN","SAAT","SANDIK","SÜT",
+"ŞAPKA","ŞARJ ALETİ","ŞİŞE","TAVA","TENCERE",
+"TOST MAKİNESİ","TURŞU","VANTİLATÖR","YASTIK",
+"YAY","YEMEK MASASI","YOĞURT","ZIMBA"
 ];
 
 const points=[10,20,30,40,50];
@@ -144,7 +165,27 @@ let wordIndex=0;
 let time=60;
 let timer=null;
 let locked=false;
-let currentWords=[];
+
+// Daha önce kullanılan kelimeleri takip eder.
+let usedWords=new Set();
+
+function getNewWords(){
+ let available=words.filter(w=>!usedWords.has(w));
+
+ // Kelime havuzu tükenirse yeni bir havuz başlat.
+ if(available.length<3){
+  usedWords.clear();
+  available=[...words];
+ }
+
+ available.sort(()=>Math.random()-.5);
+
+ let selected=available.slice(0,3);
+
+ selected.forEach(w=>usedWords.add(w));
+
+ return selected;
+}
 
 function startGroup(){
  const name=document.getElementById("groupName").value.trim();
@@ -174,10 +215,7 @@ function addGroup(){
  document.getElementById("start").classList.remove("hidden");
  document.getElementById("startTitle").textContent=
  (round+1)+". TUR - YENİ GRUP";
- document.getElementById("startDescription").textContent=
- "Bu tura katılacak grubun adını gir:";
  document.getElementById("groupName").value="";
- document.getElementById("groupName").focus();
 }
 
 function startGame(){
@@ -186,19 +224,15 @@ function startGame(){
  time=60;
  locked=false;
 
- currentWords=[...words].sort(()=>Math.random()-.5).slice(0,3);
+ currentWords=getNewWords();
 
  document.getElementById("start").classList.add("hidden");
  document.getElementById("groupResult").classList.add("hidden");
  document.getElementById("roundResult").classList.add("hidden");
  document.getElementById("game").classList.remove("hidden");
 
- document.getElementById("groupTitle").textContent=
- "🎯 "+currentGroup.name;
-
- document.getElementById("roundTitle").textContent=
- (round+1)+". TUR";
-
+ document.getElementById("groupTitle").textContent="🎯 "+currentGroup.name;
+ document.getElementById("roundTitle").textContent=(round+1)+". TUR";
  document.getElementById("pointValue").textContent=points[round];
 
  showWord();
@@ -213,7 +247,6 @@ function showWord(){
 
 function correct(){
  if(locked)return;
-
  currentGroup.scores[round]+=points[round];
  wordIndex++;
  checkNext();
@@ -235,6 +268,8 @@ function checkNext(){
 
 function startTimer(){
  clearInterval(timer);
+ document.getElementById("timer").textContent=time;
+
  timer=setInterval(()=>{
   time--;
   document.getElementById("timer").textContent=time;
@@ -251,26 +286,16 @@ function finishGroup(){
 
  document.getElementById("game").classList.add("hidden");
  document.getElementById("groupResult").classList.remove("hidden");
-
  document.getElementById("resultName").textContent=currentGroup.name;
- document.getElementById("resultScore").textContent=
- getTotal(currentGroup)+" PUAN";
-
- document.getElementById("resultMessage").textContent=
- (round+1)+". tur tamamlandı.";
+ document.getElementById("resultScore").textContent=getTotal(currentGroup)+" PUAN";
 }
 
 function nextGroup(){
  document.getElementById("groupResult").classList.add("hidden");
-
  groupIndex++;
 
  if(groupIndex<groups.length){
-  if(groups[groupIndex].completed[round]){
-   showRoundResult();
-  }else{
-   startGame();
-  }
+  startGame();
  }else{
   showRoundResult();
  }
@@ -278,26 +303,22 @@ function nextGroup(){
 
 function showRoundResult(){
  document.getElementById("roundResult").classList.remove("hidden");
- document.getElementById("roundFinished").textContent=
- (round+1)+". TUR SONUÇLARI";
+ document.getElementById("roundFinished").textContent=(round+1)+". TUR SONUÇLARI";
 
  const list=document.getElementById("roundList");
  list.innerHTML="";
 
  groups.forEach(g=>{
   const li=document.createElement("li");
-  li.textContent=g.name+" — "+getTotal(g)+" toplam puan";
+  li.textContent=g.name+" — "+getTotal(g)+" puan";
   list.appendChild(li);
  });
 
  document.getElementById("nextRoundButton").textContent=
- round===totalRounds-1?"YARIŞMAYI BİTİR":
- (round+2)+". TURA GEÇ";
+ round===totalRounds-1?"YARIŞMAYI BİTİR":(round+2)+". TURA GEÇ";
 }
 
 function nextRound(){
- if(groups.length===0)return;
-
  if(round===totalRounds-1){
   finishCompetition();
   return;
@@ -305,12 +326,8 @@ function nextRound(){
 
  round++;
  groupIndex=0;
-
  document.getElementById("roundResult").classList.add("hidden");
-
- if(groups.length>0){
-  startGame();
- }
+ startGame();
 }
 
 function getTotal(g){
@@ -343,8 +360,7 @@ function finishCompetition(){
 
  const sorted=[...groups].sort((a,b)=>getTotal(b)-getTotal(a));
 
- document.getElementById("winner").textContent=
- "🥇 ŞAMPİYON: "+sorted[0].name;
+ document.getElementById("winner").textContent="🥇 ŞAMPİYON: "+sorted[0].name;
 
  const list=document.getElementById("finalList");
  list.innerHTML="";
