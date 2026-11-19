@@ -8,35 +8,37 @@
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;background:linear-gradient(135deg,#10152f,#34205e);
- color:white;font-family:Arial;text-align:center;padding:18px;
+ margin:0;padding:18px;background:linear-gradient(135deg,#10152f,#34205e);
+ color:white;font-family:Arial;text-align:center;min-height:100vh
 }
 .container{
- max-width:700px;margin:25px auto;background:#20264b;
- padding:25px;border-radius:22px;box-shadow:0 10px 35px #0006;
+ max-width:750px;margin:25px auto;background:#20264b;
+ padding:24px;border-radius:22px;box-shadow:0 10px 35px #0006
 }
 h1{color:#ffd43b;font-size:38px}
 h2{color:#8be9fd}
 input{
  width:100%;padding:15px;border:0;border-radius:10px;
- font-size:18px;margin:10px 0;
+ font-size:18px;margin:10px 0
 }
 button{
- padding:14px 20px;border:0;border-radius:10px;
- font-weight:bold;font-size:16px;margin:6px;
- cursor:pointer;background:#ffd43b;color:#171717;
+ padding:14px 18px;border:0;border-radius:10px;
+ font-size:16px;font-weight:bold;margin:6px;cursor:pointer;
+ background:#ffd43b;color:#171717
 }
-button:hover{filter:brightness(1.12)}
-.hidden{display:none}
-.word{font-size:42px;color:#ffd43b;margin:30px 0;font-weight:bold}
-.stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.stat{background:#343c70;padding:14px;border-radius:12px;flex:1;min-width:100px}
+button:disabled{opacity:.4;cursor:not-allowed}
 .good{background:#16a36a;color:white}
+.bad{background:#d94355;color:white}
 .pass{background:#6875a5;color:white}
-#message{color:#8be9fd;min-height:25px}
+.hidden{display:none!important}
+.word{font-size:43px;color:#ffd43b;margin:30px 0;font-weight:bold}
+.stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.stat{background:#343c70;padding:14px;border-radius:12px;flex:1;min-width:95px}
+#message{min-height:28px;color:#8be9fd}
 table{width:100%;border-collapse:collapse;margin-top:20px}
 td,th{padding:12px;border-bottom:1px solid #555}
 th{color:#ffd43b}
+.small{color:#bdc8ed;font-size:14px}
 </style>
 </head>
 <body>
@@ -45,35 +47,32 @@ th{color:#ffd43b}
 <section id="setup">
 <h1>⚡ İPUCU SAVAŞI ⚡</h1>
 <h2>Kelime Tahmin Yarışması</h2>
-<p>Yarışacak grubun adını yaz:</p>
-<input id="teamName" placeholder="Örn: Şampiyonlar">
-<button onclick="startGame()">YARIŞMAYA BAŞLA</button>
+<p>İlk grubun adını yaz:</p>
+<input id="teamName" placeholder="Örneğin: Şampiyonlar">
+<button onclick="addFirstGroup()">YARIŞMAYA BAŞLA</button>
 </section>
 
 <section id="game" class="hidden">
 <h2 id="team"></h2>
 <h2 id="round"></h2>
-
 <div class="stats">
-<div class="stat">⭐ Tur puanı<br><b id="score">0</b></div>
-<div class="stat">⏱️ Süre<br><b id="time">60</b></div>
-<div class="stat">🏆 Toplam<br><b id="total">0</b></div>
+ <div class="stat">❤️ Can<br><b id="lives">3</b></div>
+ <div class="stat">⭐ Tur puanı<br><b id="score">0</b></div>
+ <div class="stat">⏱️ Süre<br><b id="time">60</b></div>
 </div>
-
-<p>Anlatıcı kelimeyi anlatsın, tahminci bulsun!</p>
+<p class="small">Anlatıcı kelimeyi anlatsın, tahminci bulsun!</p>
 <div class="word" id="word"></div>
 <p id="message">Kelimenin kendisini söylemek yasak!</p>
-
 <button class="good" onclick="correct()">DOĞRU ✓</button>
 <button class="pass" onclick="passWord()">PAS GEÇ</button>
+<button class="bad" onclick="wrong()">YANLIŞ ✕</button>
 </section>
 
 <section id="result" class="hidden">
-<h1 id="resultTitle">TUR BİTTİ</h1>
+<h1 id="resultTitle">TUR TAMAMLANDI</h1>
 <h2 id="resultScore"></h2>
 <p id="resultInfo"></p>
-<button id="nextRound" onclick="beginNextRound()">SONRAKİ TURA GEÇ</button>
-<button id="newGroup" onclick="newGroup()">YENİ GRUP</button>
+<div id="resultButtons"></div>
 </section>
 
 <section id="leaderboard">
@@ -93,164 +92,240 @@ const wordPool=[
 "Ayakkabı","Çikolata","Tren","Otobüs","Uçurtma",
 "Çanta","Kamera","Bahçe","Doktor","Hastane",
 "Orman","Balık","Elma","Masa","Sandalye",
-"Telefon","Bisiklet","Kütüphane","Sinema","Bulut"
+"Kütüphane","Sinema","Bulut","Bisiklet","Çiçek",
+"Uçurtma","Denizaltı","Kalemlik","Saat","Gemi"
 ];
 
 const points=[10,20,30];
 let groups=[];
-let currentGroup=null;
+let participants=[];
 let roundNo=1;
+let turnIndex=0;
+let currentGroup=null;
 let roundScore=0;
-let totalScore=0;
 let time=60;
 let timer=null;
 let cards=[];
 let cardIndex=0;
 let passed=[];
-let used=[];
+let ended=false;
 
-function startGame(){
+function addFirstGroup(){
  const name=document.getElementById("teamName").value.trim();
- if(!name){alert("Lütfen grup adı yaz!");return;}
-
- currentGroup={name:name,score:0,rounds:[]};
- groups.push(currentGroup);
- roundNo=1;
- totalScore=0;
-
+ if(!name){alert("Grup adı yazmalısın!");return;}
+ groups.push({name,lives:3,score:0,rounds:[],qualified:true});
+ participants=[groups[0]];
+ turnIndex=0;
  document.getElementById("setup").classList.add("hidden");
- document.getElementById("result").classList.add("hidden");
- document.getElementById("game").classList.remove("hidden");
- startRound();
+ startTurn();
 }
 
-function startRound(){
+function startTurn(){
  clearInterval(timer);
+ currentGroup=participants[turnIndex];
+ if(!currentGroup){finishRound();return;}
  roundScore=0;
  time=60;
- passed=[];
- used=[];
- cards=[...wordPool].sort(()=>Math.random()-.5).slice(0,3);
  cardIndex=0;
-
+ passed=[];
+ ended=false;
+ cards=[...wordPool].sort(()=>Math.random()-.5).slice(0,3)
+ .map(word=>({word,penalty:false}));
+ document.getElementById("game").classList.remove("hidden");
+ document.getElementById("result").classList.add("hidden");
  document.getElementById("team").textContent=currentGroup.name;
  document.getElementById("round").textContent=roundNo+". TUR";
  document.getElementById("message").textContent=
  "Kelimenin kendisini söylemek yasak!";
  update();
  showWord();
-
  timer=setInterval(()=>{
   time--;
   update();
-  if(time<=0)finishRound();
+  if(time<=0)finishTurn();
  },1000);
+}
+
+function update(){
+ document.getElementById("lives").textContent=currentGroup.lives;
+ document.getElementById("score").textContent=roundScore;
+ document.getElementById("time").textContent=time;
 }
 
 function showWord(){
  if(cardIndex>=cards.length){
-  if(passed.length>0){
+  if(passed.length){
    cards=passed;
    passed=[];
    cardIndex=0;
    document.getElementById("message").textContent=
-   "Pas geçilen kelimelere tekrar dönüyoruz!";
+   "Pas geçilen kelimeler tekrar soruluyor!";
   }else{
-   finishRound();
+   finishTurn();
    return;
   }
  }
- document.getElementById("word").textContent=cards[cardIndex];
-}
-
-function update(){
- document.getElementById("score").textContent=roundScore;
- document.getElementById("time").textContent=time;
- document.getElementById("total").textContent=totalScore+roundScore;
+ document.getElementById("word").textContent=cards[cardIndex].word;
 }
 
 function correct(){
- if(time<=0)return;
+ if(ended||time<=0)return;
+ const card=cards[cardIndex];
  roundScore+=points[roundNo-1];
- used.push(cards[cardIndex]);
+ if(card.penalty && currentGroup.lives<3){
+  currentGroup.lives++;
+  document.getElementById("message").textContent=
+  "Doğru! Puan kazandınız ve bir can geri geldi! ❤️";
+ }else{
+  document.getElementById("message").textContent="Doğru! Tebrikler! 🎉";
+ }
  cardIndex++;
- document.getElementById("message").textContent="Doğru! Puan kazandınız 🎉";
  update();
  showWord();
 }
 
 function passWord(){
- if(time<=0)return;
- passed.push(cards[cardIndex]);
+ if(ended||time<=0)return;
+ const card=cards[cardIndex];
+ if(!card.penalty){
+  currentGroup.lives--;
+  card.penalty=true;
+ }
+ passed.push(card);
  cardIndex++;
+ update();
  document.getElementById("message").textContent=
- "Kelime sona bırakıldı. Diğer kelimeye geç!";
+ "Pas geçildi! Bir can eksildi. Kelime tekrar sorulacak.";
+ if(currentGroup.lives<=0){
+  finishTurn();
+  return;
+ }
  showWord();
 }
 
-function finishRound(){
- clearInterval(timer);
- totalScore+=roundScore;
- currentGroup.score=totalScore;
- currentGroup.rounds.push(roundScore);
+function wrong(){
+ if(ended||time<=0)return;
+ currentGroup.lives--;
+ cardIndex++;
+ update();
+ document.getElementById("message").textContent="Yanlış! Bir can eksildi.";
+ if(currentGroup.lives<=0){
+  finishTurn();
+  return;
+ }
+ showWord();
+}
 
+function finishTurn(){
+ if(ended)return;
+ ended=true;
+ clearInterval(timer);
+ currentGroup.score+=roundScore;
+ currentGroup.rounds[roundNo-1]=roundScore;
+
+ if(roundScore!==points[roundNo-1]*3 || currentGroup.lives<=0){
+  currentGroup.qualified=false;
+ }
  document.getElementById("game").classList.add("hidden");
  document.getElementById("result").classList.remove("hidden");
 
  document.getElementById("resultTitle").textContent=
- roundNo+". TUR TAMAMLANDI";
-
+ currentGroup.name+" — "+roundNo+". TUR BİTTİ";
  document.getElementById("resultScore").textContent=
  "Bu tur: "+roundScore+" / "+(points[roundNo-1]*3)+" puan";
-
  document.getElementById("resultInfo").textContent=
- "Grubun toplam puanı: "+totalScore;
+ "Kalan can: "+currentGroup.lives+
+ " | Genel toplam: "+currentGroup.score+" puan"+
+ (currentGroup.qualified?" | Sonraki tura hak kazandı!":" | Bu grup elendi.");
 
- const passedAll=roundScore===points[roundNo-1]*3;
-
- if(!passedAll){
-  document.getElementById("resultInfo").textContent+=
-  " — Yeterli puan alınamadı. Grup elendi.";
-  document.getElementById("nextRound").classList.add("hidden");
-  document.getElementById("newGroup").classList.remove("hidden");
- }else if(roundNo<3){
-  document.getElementById("resultInfo").textContent+=
-  " — Tebrikler! Sonraki tura geçtiniz.";
-  document.getElementById("nextRound").classList.remove("hidden");
-  document.getElementById("newGroup").classList.add("hidden");
- }else{
-  document.getElementById("resultInfo").textContent+=
-  " — Şampiyonluk turunu tamamladınız! 🏆";
-  document.getElementById("nextRound").classList.add("hidden");
-  document.getElementById("newGroup").classList.remove("hidden");
- }
  updateRanking();
+
+ const buttons=document.getElementById("resultButtons");
+ buttons.innerHTML="";
+
+ if(roundNo===1){
+  addButton(buttons,"YENİ GRUP EKLE",addNextGroup);
+  addButton(buttons,"1. TURU TAMAMLA",finishRound);
+ }else{
+  addButton(buttons,"SONRAKİ GRUP",nextGroup);
+ }
 }
 
-function beginNextRound(){
- roundNo++;
- document.getElementById("result").classList.add("hidden");
- document.getElementById("game").classList.remove("hidden");
- startRound();
+function addButton(parent,label,action){
+ const b=document.createElement("button");
+ b.textContent=label;
+ b.onclick=action;
+ parent.appendChild(b);
 }
 
-function newGroup(){
+function addNextGroup(){
+ const name=prompt("Yeni grubun adını yaz:");
+ if(!name||!name.trim())return;
+ const g={name:name.trim(),lives:3,score:0,rounds:[],qualified:true};
+ groups.push(g);
+ participants.push(g);
+ turnIndex=participants.length-1;
+ startTurn();
+}
+
+function nextGroup(){
+ turnIndex++;
+ if(turnIndex<participants.length){
+  startTurn();
+ }else{
+  finishRound();
+ }
+}
+
+function finishRound(){
  clearInterval(timer);
- currentGroup=null;
- document.getElementById("result").classList.add("hidden");
- document.getElementById("setup").classList.remove("hidden");
- document.getElementById("teamName").value="";
- document.getElementById("teamName").focus();
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ const buttons=document.getElementById("resultButtons");
+ buttons.innerHTML="";
+ updateRanking();
+
+ if(roundNo<3){
+  const qualified=groups.filter(g=>g.qualified);
+  document.getElementById("resultTitle").textContent=roundNo+". TUR TAMAMLANDI";
+  document.getElementById("resultScore").textContent=
+  qualified.length+" grup sonraki tura geçti.";
+  document.getElementById("resultInfo").textContent=
+  "Tüm grupların turu tamamlandı. Hazırsanız devam edin.";
+  addButton(buttons,(roundNo+1)+". TURA GEÇ",()=>{
+   roundNo++;
+   participants=qualified;
+   turnIndex=0;
+   if(!participants.length){
+    finishGame();
+   }else startTurn();
+  });
+ }else finishGame();
+}
+
+function finishGame(){
+ clearInterval(timer);
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ document.getElementById("resultTitle").textContent="🏆 OYUN TAMAMLANDI!";
+ document.getElementById("resultScore").textContent="Final sıralaması hazır!";
+ document.getElementById("resultInfo").textContent=
+ "Bütün grupların sonuçları aşağıda.";
+ document.getElementById("resultButtons").innerHTML="";
+ addButton(document.getElementById("resultButtons"),"YENİ OYUN",()=>{
+  location.reload();
+ });
  updateRanking();
 }
 
 function updateRanking(){
  const sorted=[...groups].sort((a,b)=>b.score-a.score);
  document.getElementById("ranking").innerHTML=
- "<table><tr><th>Grup</th><th>Puan</th></tr>"+
+ "<table><tr><th>Grup</th><th>Puan</th><th>Can</th><th>Durum</th></tr>"+
  sorted.map(g=>"<tr><td>"+escapeHTML(g.name)+
- "</td><td>"+g.score+"</td></tr>").join("")+
- "</table>";
+ "</td><td>"+g.score+"</td><td>"+g.lives+
+ "</td><td>"+(g.qualified?"Devam ediyor":"Elendi")+
+ "</td></tr>").join("")+"</table>";
 }
 
 function escapeHTML(s){
