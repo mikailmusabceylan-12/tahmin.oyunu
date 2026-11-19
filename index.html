@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Anlat Bakalım</title>
+<title>Anlat Bakalım Yarışması</title>
 <style>
 *{box-sizing:border-box}
 body{
@@ -13,7 +13,7 @@ body{
  color:white;font-family:Arial;text-align:center;
 }
 .container{
- max-width:600px;margin:25px auto;padding:25px;
+ max-width:620px;margin:25px auto;padding:25px;
  background:#202c47;border-radius:20px;
  box-shadow:0 10px 30px #0008;
 }
@@ -23,7 +23,7 @@ input{
  border-radius:10px;font-size:18px;margin:15px 0;
 }
 button{
- padding:14px 20px;margin:7px;border:0;
+ padding:14px 18px;margin:7px;border:0;
  border-radius:12px;font-size:16px;
  font-weight:bold;cursor:pointer;
  background:#ffd43b;
@@ -44,6 +44,7 @@ button{
 .correct{background:#20b96b;color:white}
 .pass{background:#e49a32;color:white}
 .next{background:#2999ed;color:white}
+.danger{background:#d94c4c;color:white}
 li{
  list-style:none;background:#111a30;
  padding:13px;margin:8px;border-radius:10px;
@@ -56,52 +57,65 @@ li{
 <h1>🏆 ANLAT BAKALIM</h1>
 
 <div id="start">
-<h2>Grup Adı</h2>
-<input id="groupName" placeholder="Grup adını gir">
+<h2 id="startTitle">1. TUR - 1. GRUP</h2>
+<p id="startDescription">Grup adını gir:</p>
+<input id="groupName" placeholder="Grup adı">
 <br>
-<button onclick="startGroup()">Başla</button>
+<button onclick="startGroup()">Yarışmaya Başla</button>
 </div>
 
 <div id="game" class="hidden">
 <h2 id="groupTitle"></h2>
 <div class="info">
  <h3 id="roundTitle"></h3>
- Her kelime: <b id="pointValue"></b> puan
+ Kelime başına: <b id="pointValue"></b> puan
  <div id="timer">60</div>
  Kelime: <b id="wordCount">1</b> / 3
- <br>Toplam puan: <b id="score">0</b>
+ <br>Bu grubun toplam puanı: <b id="score">0</b>
 </div>
 
 <div class="word" id="word"></div>
-
 <button class="correct" onclick="correct()">✅ BİLDİ</button>
 <button class="pass" onclick="skip()">⏭ PAS</button>
 </div>
 
-<div id="roundEnd" class="hidden">
-<h2>🎉 TUR TAMAMLANDI!</h2>
-<h2 id="roundResult"></h2>
-<h1 id="roundScore"></h1>
-<p id="roundMessage"></p>
-<button class="next" id="nextButton" onclick="nextRound()">
-2. TURA GEÇ
-</button>
+<div id="groupResult" class="hidden">
+<h2>🎉 GRUP TURU TAMAMLADI!</h2>
+<h2 id="resultName"></h2>
+<h1 id="resultScore"></h1>
+<p id="resultMessage"></p>
+<button class="next" onclick="nextGroup()">Sonraki Gruba Geç</button>
 </div>
 
-<div id="groupEnd" class="hidden">
-<h1>🏆 GRUP TAMAMLANDI!</h1>
-<h2 id="finishedGroup"></h2>
-<h1 id="finishedScore"></h1>
+<div id="roundResult" class="hidden">
+<h2>🏆 TURDAKİ BÜTÜN GRUPLAR TAMAMLANDI!</h2>
+<h3 id="roundFinished"></h3>
+<ol id="roundList"></ol>
+
+<button onclick="addGroup()" class="correct">
+➕ YENİ GRUP OLUŞTUR
+</button>
+
+<button onclick="nextRound()" class="next" id="nextRoundButton">
+2. TURA GEÇ
+</button>
+
+<br>
 <button onclick="showRanking()">Puan Tablosu</button>
-<button onclick="newGroup()">Yeni Grup</button>
 </div>
 
 <div id="ranking" class="hidden">
-<h2>🏆 SIRALAMA</h2>
+<h2>🏆 PUAN TABLOSU</h2>
 <ol id="rankingList"></ol>
-<button onclick="newGroup()">Yeni Grup</button>
+<button onclick="backToRound()">Geri Dön</button>
 </div>
 
+<div id="final" class="hidden">
+<h1>🏆 YARIŞMA BİTTİ!</h1>
+<h2 id="winner"></h2>
+<ol id="finalList"></ol>
+<button onclick="location.reload()">Yeni Yarışma</button>
+</div>
 </div>
 
 <script>
@@ -119,14 +133,14 @@ const words=[
 "ÇANTA","BULUT","ASANSÖR"
 ];
 
-const points=[10,20,30];
-const roundNames=["1. TUR","2. TUR","3. TUR"];
+const points=[10,20,30,40,50];
+const totalRounds=5;
 
 let groups=[];
-let currentGroup=null;
 let round=0;
+let groupIndex=0;
+let currentGroup=null;
 let wordIndex=0;
-let score=0;
 let time=60;
 let timer=null;
 let locked=false;
@@ -134,34 +148,59 @@ let currentWords=[];
 
 function startGroup(){
  const name=document.getElementById("groupName").value.trim();
- if(!name){alert("Grup adını gir!");return;}
 
- currentGroup={
+ if(!name){
+  alert("Grup adını gir!");
+  return;
+ }
+
+ if(groups.some(g=>g.name.toLocaleLowerCase("tr-TR")===name.toLocaleLowerCase("tr-TR"))){
+  alert("Bu grup adı zaten var!");
+  return;
+ }
+
+ groups.push({
   name:name,
-  scores:[0,0,0],
-  total:0
- };
+  scores:[0,0,0,0,0],
+  completed:[false,false,false,false,false]
+ });
 
- groups.push(currentGroup);
- score=0;
- round=0;
- startRound();
+ groupIndex=groups.length-1;
+ startGame();
 }
 
-function startRound(){
+function addGroup(){
+ document.getElementById("roundResult").classList.add("hidden");
+ document.getElementById("start").classList.remove("hidden");
+ document.getElementById("startTitle").textContent=
+ (round+1)+". TUR - YENİ GRUP";
+ document.getElementById("startDescription").textContent=
+ "Bu tura katılacak grubun adını gir:";
+ document.getElementById("groupName").value="";
+ document.getElementById("groupName").focus();
+}
+
+function startGame(){
+ currentGroup=groups[groupIndex];
  wordIndex=0;
  time=60;
  locked=false;
+
  currentWords=[...words].sort(()=>Math.random()-.5).slice(0,3);
 
  document.getElementById("start").classList.add("hidden");
- document.getElementById("roundEnd").classList.add("hidden");
- document.getElementById("groupEnd").classList.add("hidden");
+ document.getElementById("groupResult").classList.add("hidden");
+ document.getElementById("roundResult").classList.add("hidden");
  document.getElementById("game").classList.remove("hidden");
 
- document.getElementById("groupTitle").textContent=currentGroup.name;
- document.getElementById("roundTitle").textContent=roundNames[round];
+ document.getElementById("groupTitle").textContent=
+ "🎯 "+currentGroup.name;
+
+ document.getElementById("roundTitle").textContent=
+ (round+1)+". TUR";
+
  document.getElementById("pointValue").textContent=points[round];
+
  showWord();
  startTimer();
 }
@@ -169,12 +208,12 @@ function startRound(){
 function showWord(){
  document.getElementById("word").textContent=currentWords[wordIndex];
  document.getElementById("wordCount").textContent=wordIndex+1;
- document.getElementById("score").textContent=score;
+ document.getElementById("score").textContent=getTotal(currentGroup);
 }
 
 function correct(){
  if(locked)return;
- score+=points[round];
+
  currentGroup.scores[round]+=points[round];
  wordIndex++;
  checkNext();
@@ -188,7 +227,7 @@ function skip(){
 
 function checkNext(){
  if(wordIndex>=3){
-  finishRound();
+  finishGroup();
  }else{
   showWord();
  }
@@ -199,62 +238,120 @@ function startTimer(){
  timer=setInterval(()=>{
   time--;
   document.getElementById("timer").textContent=time;
-  if(time<=0)finishRound();
+  if(time<=0)finishGroup();
  },1000);
 }
 
-function finishRound(){
+function finishGroup(){
  if(locked)return;
  locked=true;
  clearInterval(timer);
 
+ currentGroup.completed[round]=true;
+
  document.getElementById("game").classList.add("hidden");
+ document.getElementById("groupResult").classList.remove("hidden");
 
- if(round===2){
-  currentGroup.total=currentGroup.scores.reduce((a,b)=>a+b,0);
-  document.getElementById("groupEnd").classList.remove("hidden");
-  document.getElementById("finishedGroup").textContent=currentGroup.name;
-  document.getElementById("finishedScore").textContent=currentGroup.total+" PUAN";
+ document.getElementById("resultName").textContent=currentGroup.name;
+ document.getElementById("resultScore").textContent=
+ getTotal(currentGroup)+" PUAN";
+
+ document.getElementById("resultMessage").textContent=
+ (round+1)+". tur tamamlandı.";
+}
+
+function nextGroup(){
+ document.getElementById("groupResult").classList.add("hidden");
+
+ groupIndex++;
+
+ if(groupIndex<groups.length){
+  if(groups[groupIndex].completed[round]){
+   showRoundResult();
+  }else{
+   startGame();
+  }
  }else{
-  document.getElementById("roundEnd").classList.remove("hidden");
-  document.getElementById("roundResult").textContent=roundNames[round]+" BİTTİ";
-  document.getElementById("roundScore").textContent=score+" PUAN";
-
-  document.getElementById("nextButton").textContent=
-  roundNames[round+1]+" GEÇ";
-
-  document.getElementById("roundMessage").textContent=
-  "Hazırsanız sonraki tura başlayabilirsiniz.";
+  showRoundResult();
  }
 }
 
-function nextRound(){
- round++;
- startRound();
+function showRoundResult(){
+ document.getElementById("roundResult").classList.remove("hidden");
+ document.getElementById("roundFinished").textContent=
+ (round+1)+". TUR SONUÇLARI";
+
+ const list=document.getElementById("roundList");
+ list.innerHTML="";
+
+ groups.forEach(g=>{
+  const li=document.createElement("li");
+  li.textContent=g.name+" — "+getTotal(g)+" toplam puan";
+  list.appendChild(li);
+ });
+
+ document.getElementById("nextRoundButton").textContent=
+ round===totalRounds-1?"YARIŞMAYI BİTİR":
+ (round+2)+". TURA GEÇ";
 }
 
-function newGroup(){
- document.getElementById("groupEnd").classList.add("hidden");
- document.getElementById("ranking").classList.add("hidden");
- document.getElementById("start").classList.remove("hidden");
- document.getElementById("groupName").value="";
- document.getElementById("groupName").focus();
+function nextRound(){
+ if(groups.length===0)return;
+
+ if(round===totalRounds-1){
+  finishCompetition();
+  return;
+ }
+
+ round++;
+ groupIndex=0;
+
+ document.getElementById("roundResult").classList.add("hidden");
+
+ if(groups.length>0){
+  startGame();
+ }
+}
+
+function getTotal(g){
+ return g.scores.reduce((a,b)=>a+b,0);
 }
 
 function showRanking(){
- document.getElementById("groupEnd").classList.add("hidden");
+ document.getElementById("roundResult").classList.add("hidden");
  document.getElementById("ranking").classList.remove("hidden");
 
- const sorted=[...groups].sort((a,b)=>b.total-a.total);
+ const sorted=[...groups].sort((a,b)=>getTotal(b)-getTotal(a));
  const list=document.getElementById("rankingList");
  list.innerHTML="";
 
  sorted.forEach((g,i)=>{
   const li=document.createElement("li");
-  li.textContent=(i+1)+". "+g.name+" — "+g.total+
-   " puan (10 puanlık tur: "+g.scores[0]+
-   ", 20 puanlık tur: "+g.scores[1]+
-   ", 30 puanlık tur: "+g.scores[2]+")";
+  li.textContent=(i+1)+". "+g.name+" — "+getTotal(g)+" puan";
+  list.appendChild(li);
+ });
+}
+
+function backToRound(){
+ document.getElementById("ranking").classList.add("hidden");
+ showRoundResult();
+}
+
+function finishCompetition(){
+ document.getElementById("roundResult").classList.add("hidden");
+ document.getElementById("final").classList.remove("hidden");
+
+ const sorted=[...groups].sort((a,b)=>getTotal(b)-getTotal(a));
+
+ document.getElementById("winner").textContent=
+ "🥇 ŞAMPİYON: "+sorted[0].name;
+
+ const list=document.getElementById("finalList");
+ list.innerHTML="";
+
+ sorted.forEach((g,i)=>{
+  const li=document.createElement("li");
+  li.textContent=(i+1)+". "+g.name+" — "+getTotal(g)+" puan";
   list.appendChild(li);
  });
 }
